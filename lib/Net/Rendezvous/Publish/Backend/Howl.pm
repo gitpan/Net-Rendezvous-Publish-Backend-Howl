@@ -4,7 +4,7 @@ use warnings;
 use XSLoader;
 use base qw( Class::Accessor::Lvalue::Fast );
 __PACKAGE__->mk_accessors(qw( _handle _salt ));
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 XSLoader::load __PACKAGE__;
 
@@ -24,6 +24,7 @@ sub DESTROY {
 sub publish {
     my $self = shift;
     my %args = @_;
+    $args{txt} = [ split /\x{1}/, $args{txt} ];
     return xs_publish( $self->_handle, map {
         $_ || ''
     } @args{qw( object name type domain host port txt )} );
