@@ -3,6 +3,7 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#include <howl.h>
 #include <rendezvous/rendezvous.h>
 #include <rendezvous/text_record.h>
 
@@ -17,7 +18,8 @@
 static sw_string
 status_text[] = {
     "success",
-    "Stopped",
+    "success", /* should be "Stopped", but in Howl 0.9.8 it seems to
+		* tell me STOPPED when it should be STARTED. I Hate Software */
     "Name Collision",
     "Invalid"
 };
@@ -25,7 +27,6 @@ status_text[] = {
 
 static sw_result
 publish_reply(  
-    sw_rendezvous_publish_handler handler,
     sw_rendezvous                 rendezvous,
     sw_rendezvous_publish_status  status,
     sw_rendezvous_publish_id      id,
@@ -95,21 +96,21 @@ CODE:
     DS( warn("publish %s %s %d %x\n", name, type, port, object ) );
     
     if ((result = sw_rendezvous_publish( 
-	     self, name, type, *domain ? domain : NULL, *host ? host : NULL, port, 
+	     self, 0, name, type, *domain ? domain : NULL, *host ? host : NULL, port, 
 	     sw_text_record_bytes(text), sw_text_record_len(text),
-	     NULL, publish_reply, SvREFCNT_inc( object), &id 
+	     publish_reply, SvREFCNT_inc( object), &id 
 	     )) != SW_OKAY)
     {
         /* sw_text_record_fina( &text ); */
 	croak("publish failed: %d\n", result);
     }
-    /* sw_text_record_fina( &text ); */
+    sw_text_record_fina( text ); 
     RETVAL = id;
 }
 OUTPUT: RETVAL
 
 sw_result
-sw_rendezvous_stop_publish(self, id)
+sw_discovery_cancel(self, id)
 	sw_rendezvous	self
 	sw_rendezvous_publish_id	id
 
